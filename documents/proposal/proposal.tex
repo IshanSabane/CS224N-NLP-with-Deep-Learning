@@ -1,0 +1,345 @@
+\documentclass{article}
+
+\usepackage[final]{neurips_2019}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{lipsum}
+\usepackage{multicol}
+\usepackage{amsmath}
+
+\newcommand{\note}[1]{\textcolor{blue}{{#1}}}
+
+\title{
+   Robust Embeddings using Contrastive and Multiple Negatives on BERT \\
+  \vspace{1em}
+  \small{\normalfont Stanford CS224N Default Project}  % Select one and delete the other
+}
+
+\author{
+  Shoaib Mohammed \\
+  Department of Computer Science \\
+  Stanford University \\
+  \texttt{shoaibmh@stanford.edu} \\
+  % Examples of more authors
+  \And
+  Ishan Sabane \\
+  Department of Electrical Engineering \\
+  Stanford University \\
+  \texttt{ishancs@stanford.edu} \\
+%   \And
+%   Name \\
+%   Department of Computer Science \\
+%   Stanford University \\
+%   \texttt{name@stanford.edu}
+}
+
+\begin{document}
+
+\maketitle
+
+% \begin{abstract}
+%   Required for final report
+% \end{abstract}
+
+\section{Key Information to include}
+
+\begin{itemize}
+    \item External collaborators (if you have any): N/A
+    \item Mentor (custom project only): N/A
+    \item Sharing project: N/A
+\end{itemize}
+
+
+\section{Research paper summary (max 2 pages)}
+
+% \begin{table}[h]
+%     \centering
+%     \begin{tabular}{ll}
+%         \toprule
+%         \textbf{Title} & SimCSE: Simple Contrastive Learning of Sentence Embeddings \\
+%         \midrule
+%         \textbf{Venue} & Conference on Empirical Methods in Natural Language Processing (EMNLP ) \\
+%         \textbf{Year}  & 2021 \\
+%         \textbf{URL}   & \url{} \\
+%         \bottomrule
+%     \end{tabular}
+%     \vspace{1em}
+%     \caption{Sample table for bibliographical information~\cite{rajpurkar2018know}.}
+% \end{table}
+
+% \paragraph{Possible Papers:  }
+
+% \begin{itemize}
+%     \item  SMART: Robust and Efficient Fine-Tuning for Pre-trained
+%      \item
+% Natural Language Models through Principled Regularized
+% Optimization
+
+% \end{itemize}
+
+% Improves metrics on all the five downstream tasks mentioned in the paper. Need to implement fine-tuning with a different loss function \cite{smart}.
+
+% More Pre-training on all the given datasets  using the Masked LM method should not take time. The method would depend on the masking percentage and the training method. 
+
+% Cosine similarity fine-tuning could be the addtional model which we could train for the STS task. 
+
+% For the paraphrase detection we could find another SOTA method which is easier to implement.
+
+% Final improvement would be to use the multitask learning method mentioned in the default project to improve over all the three tasks. There is a diagram given which we can use to implement the training part of the project, once we have the code working then adding more things would be easier. 
+
+% For paper background we could focus on the fine-tuning methods used over the BERT baseline which could include additional features, different embeddings, model changes etc. Same for the other tasks as well.
+
+\subsection{CSE: Contrastive Learning for NLP Fine-Tuning \cite{simcse}}
+
+\textbf{Background:}  Generating universal sentence embedding is a challenging problem in NLP. BERT which is an Encoder Based Architecture works well for generating sentence embeddings for multiple downstream tasks. One method to improve the performance on STS and paraphrase detection is to learn sentence embeddings such that the model learns by pulling semantically close neighbors together and pushing apart non-neighbor sentence embeddings \cite{simcse}.
+% "SimCSE: Simple Contrastive Learning of Sentence Embeddings" is a method which builds robust sentence embeddings for downstream tasks using either supervised or unsupervised learning approach. The unsupervised approach involves predicting the same input sentence using a contrastive loss as the objective function with standard dropout used as noise, which proves to be effective. The supervised approach incorporates annotated pairs from natural language inference datasets, using the entailment pairs as positives and contradiction pairs as negatives for the contrastive learning loss.  
+
+\textbf{Unsupervised Contrastive Learning:}
+Consider a collection of sentences $\{x_i\}^m_{i=1}$ The unsupervised framework uses $x^+_i = x_i$ to create a sentence pair $(x_i, x^+_i)$. Now, a mask is used to drop random tokens from both the sentences. $h^z_i = f_\theta(x_i, z)$
+where $h^z_i$ is the masked sentence embedding  and z is a random mask generated using dropout noise method with $p = 0.1$. The loss for a batch of N sentences is given as follows:  
+\vspace{-1em}
+$$ \mathcal{L} = - \log \frac{e^{\operatorname{sim}(h^{z_i}_i, h^{z^*_i}_i)/ \tau} }{ \sum_{j=1}^{N} e^{\operatorname{sim} (h^{z_i}_i , h^{z^*_j}_j ) / \tau}}$$
+
+All the model weights are fine-tuned using this loss. Methods such as changing the learning rate based on layer depth can be further be implemented on top of this method. 
+
+
+
+
+\textbf{Supervised Contrastive Learning:
+} 
+Consider a set of paired examples $D = \{(x_i, x^+_i)\}^m_{i=1}$, where $x_i$ and $x^+_i$ which are semantically related sentences. Let $h_i$ and $h^+_i$ be the embedding representations of the two sentences.
+The sentence pairs are extend to triplets by adding negative examples. Certain datasets have negative examples which can be used directly. Hence, we convert the pair ($x_i, x^+_i$) to ($x_i, x^+_i, x^-_i$) Then the contrastive loss function for N sentence pairs is given as follows: 
+
+$$\mathcal{L} = -\log \frac{e^{\operatorname{sim}(h_i, h_{i+})/\tau}} {\sum_{j=1}^{N} ( e^{\operatorname{sim}(h_i, h^+_{j})/ \tau} + e^{\operatorname{sim}(h_i, h^-_{j})/ \tau})}    $$
+
+The above method of adding hard negative examples improves the performance for semantic textual similarity to 86.2 and is the final supervised model as used for comparitive study.
+
+\textbf{Contributions:
+}The paper provides two learning frameworks depending on the availability of labeled dataset: Supervised and Unsupervised learning algorithms. The paper provides performance improvements for BERT base and RoBERTa over the STS dataset. The SimCSE framework outperforms previous results on semantic textual similarity tasks with an average of 76.3\% for the unsupervised models and 81.6\% for the supervised model using BERT base model. Other performance improvements are reported over the MLNI and SNLI datasets using supervised learning algorithm.
+
+\textbf{Limitations and Discussion}
+The limitations in contrastive learning are due to the difficulty in generating similar sentence pairs using data augmentation methods. The unsupervised learning while improves the baseline performances, does not outperform the supervised learning in downstream tasks.
+
+\textbf{Why this Paper?}
+The reason that we initially read the paper was because it is mentioned in the project references.  However, the reason we chose this paper is because of the idea of contrastive learning which has been has proved to be efficient in computer vision. Contrastive learning aligns with alignment and uniformity which enables the learning framework to provide embeddings uniformly spread across the vector spaces while preserving semantic relatedness.
+
+\textbf{ What is a wider research context of this paper?}
+To build generalizable architectures, the extension of unsupervised contrastive objective may have a broader application in NLP. as it provides a new perspective on data augmentation. This method can be used in pretraining language models to create generalizable embeddings for sentences.  
+
+\subsection{Efficient Natural Language Response Suggestion
+for Smart Reply \cite{smart-reply}}
+
+% The goal of training is to minimize the approximated mean negative log probability of the data. If we have a single batch, this would be the following:
+
+% \begin{align*}
+%     \mathcal{J}(\textbf{x}, \textbf{y}, \theta) &= - \frac{1}{K} \sum_{i = 1}^{K} \log P_\text{approx}(y_i | x_i) \\
+%     &= - \frac{1}{K} \sum_{i = 1}^{K} \Bigg[S(x_i, y_i) - \log \sum_{j = 1}^{K} e^{S(x_i, y_i)} \Bigg]
+% \end{align*}
+
+% where $\theta$ represents the word embeddings and neural network parameters used to calculate $S$. It is helpful to know that $S(x, y)$ is learned upto an additive term such that it does not affect the \texttt{arg max} over $y$.
+
+% The above loss function essentially minimizes the distance between the pair $(x_i, y_i)$ and maximizes the distance between the pair $(x_i, y_j)$ if $i \neq j$.
+
+% There are additional things that the paper talks about such as incorporating multiple features or response biasing which we will not go over because we are mainly concerned with improving performance for STS.
+
+\paragraph{Background.}
+% Prompt
+% Set the scene for the paper, looking to the introduction section, as well as the related work or background sections, if they exist.
+% What motivations and problems do the authors cite when explaining why they think this work is important? 
+% What problems are they attempting to solve, or what knowledge are they hoping to discover?
+The paper is based on the problem of generating replies for emails. The replies are chosen from a fixed set of responses which are ranked on the basis of how good a response they are for the email.
+
+Previously, statistical models were used to accomplish such a task. However, neural network models have replaced such systems and perform much better. More commonly, sequence-to-sequence models have been widespread in this area. The problem with \texttt{Seq2Seq} models is that they are generalized because of which replying to specific prompts can be difficult. It is also harder to rank common responses requiring extra normalization. Furthermore, they are slow and complicated to train.
+
+In terms of motivation, the authors cite Kurzweil's work describing creating a simulation of the human neocortex (part of the brain that does most of the thinking) by having similar structured components encoding abstract ideas as sequeneces. This provides a structural hierarchy allowing to build upon the learnings of lower-level modules. Longer relationships are modeled in such a hierarchy.
+
+\paragraph{Summary of contributions.}
+% Prompt
+% Each paper is published because it adds something to the ongoing research conversation. It teaches us something we didn't know before, or provides us with a tool we didn't have, etc.
+% Summarize what contributions this paper makes, whether they be in new algorithms, new experimental results and analysis, new meta-analysis of old papers, new datasets, or otherwise.
+
+The idea of using a hierarchy of deep networks built on top of n-gram representations is something that is new. This gets closer to modeling the human brain because there is a structure for each part of the deep network. The human brain has an intricate structure wherein each part of the brain focuses on a specific task. Also, the notion of having one correct response vs. $K - 1$ negative responses with the aim of being able to identify why the correct response minimizes the distance is a great idea. The report precision at 1 \textit{P@1} is $52\%$ for a batch size of $50$. Finally, the authors were able to show that this approach can outperform sequence-to-sequence models as you are better able to capture semantic information.
+
+\paragraph{Limitations and discussion.}
+% Prompt
+% Every research paper has limitations and flaws.
+% Using the discussion and conclusion sections if they exist, critically identify interesting experiments, methodology, or methods that might have made this paper stronger.
+% For example, did the authors only evaluate on English, or only on Wikipedia text, and claim that their results generalize to all of language?
+% Did the authors not characterize the errors their model makes compared to previous models?
+% Discuss how these limitations contextualize the findings of the paper -- do you still find the paper convincing?
+
+I would say the approach of multiple negatives made this paper stronger. To get a specific response $y$ from an input email $x$, we have to model $P(y | x)$. A set of $K$ possible responses are used to approximate $P(y | x)$. It is important to note that the set $K$ contains a single correct response and $K - 1$ random negative responses. To elaborate upon this further, there are $K$ input emails $\textbf{x} = (x_1, x_2, \cdots, x_K)$ and we have their corresponding responses $\textbf{x} = (y_1, y_2, \cdots, y_K)$. Any response $y_j$ is a negative response for $x_i$ if $i \neq j$. The approximate probability can be given by:
+\begin{align*}
+    P_\text{approx}(y | x) = \frac{e^{S(x, y)}}{\sum_{k = 1}^{K} e^{S(x, y_k)}}
+\end{align*}
+
+% \begin{align*}
+%     P(y | x) = \frac{P(x, y)}{\sum_k P(x, y_k)}
+% \end{align*}
+
+% We can estimate this joint probability using a learnt neural network scoring function $S$ such that:
+% \begin{align*}
+%     P(x, y) \propto e^{S(x, y)}
+% \end{align*}
+
+In terms of flaws in the paper, it is unclear how long or short sentences are in the fixed set of responses. Is the model biased towards shorter or longer sentences? There could be problems associated with length which are not mentioned in the paper.
+
+\paragraph{Why this paper?}
+% Prompt
+% There are infinite papers you could read, and you chose to read this one.
+% Maybe it came up first on Google Scholar, or a TA suggested it\dots regardless, discuss your motivation for choosing this paper or the topic that the paper it addressed.
+% What interested you about the topic?
+% Having read it in depth, do you feel like you've gained from it what you were hoping? (``No'' is an okay answer here.)
+
+The reason that we initially read the paper was because it is mentioned in the spec. However, the reason that we chose the paper is because of the idea of using hierarchical structure.
+
+It is interesting to see how the replies are generated. First, potential responses are pre-computed through the minimal hierarchy. At runtime the input is propagated through the hierarchical network. Then, using nearest neighbor search of the hierarchical embeddings, the best suggestions are chosen. We found the idea of trying to model structure as is in the brain interesting as this could help capture deep information of sentences.
+
+% There is a fixed set of response suggestions, $R$ which is selected from millions of common messages. In the step to select a response, the top $N$ (around 100) scoring responses in $R$ are chosen. They also make sure to maintain diversity in the set of responses. A clustering algorithm is used to omit similar suggestions. Also, there is generally a negative response if two of the responses are positive.
+
+% To represent emails and the set of fixed responses as fixed-dimensional input features, n-gram features are extracted from each. Then, during training a $d$-dimensional embedding is learnt for each n-gram. For representing sequences of words, the n-gram embeddings are combined by summing their values. This does not take time to compute and also captures semantic information alongwith word ordering information.
+
+
+
+\paragraph{Wider research context.}
+% Prompt
+% Each research paper is a focused contribution, targeting a very specific problem setting.
+% However, each paper also fits into the broader story of NLP research -- designing systems that process human languages.
+% In this course, we cover some fundamental concepts: how to represent language, what structure language has, why language is hard for computers to model, what problems tend to occur when applying deep learning methods to language.
+% Connect the paper to these broad topics.
+% Does the paper help us build better representations of language?
+% If it helps us solve a particular task (like automatic translation or question answering,) do the methods have any promise for being more broadly applicable to other tasks (e.g., a new type of regularization in LSTMs applied in language modeling might be applicable to other NLP tasks!)
+% It may be useful to do a cursory read of one or more of the papers cited in the paper you're reviewing, and cite them.
+
+We think any problem that requires comparing how good responses are can make use of \textit{Smart Reply}. This could be with tasks involving replying to emails and messaging platforms. But it could also be applied to tasks such as STS wherein we have to evaluate the level of similarity of two sentences. A real-life application could be of translation services wherein we can perform STS to see how similar a machine translation is to a reference translation.
+
+One application the authors mention is the problem of finding datapoints with the largest dot-product values. This problem is also called \textit{Maximum Inner Product Search (MIPS)}. Using \textit{hierarchical quantization for efficient search} is able to solve MIPS much faster than the traditional methods.
+
+\section{Project description}
+
+\subsection{Goal} 
+% Prompt
+% If possible, try to phrase this in terms of a scientific question you are trying to answer -- e.g., your goal may be to investigate whether a particular model or technique performs well at a certain task, or whether you can improve a particular model by adding some new variant, or (for theoretical/analytical projects), you might have some particular hypothesis that you seek to confirm or disprove.
+% Otherwise, your goal may be simply to successfully implement a complex neural model, and show that it performs well on a given task.
+% Briefly motivate why you chose this goal -- why do you think it is important, interesting, challenging and/or likely to succeed?
+% If you have any secondary or stretch goals (i.e. things you will do if you have time), please also describe them.
+% In this section, you should also make it clear how your project relates to your chosen paper.
+
+We will be implementing a Bidirectional Encoder Representations from Transformers (or BERT) model to perform three different tasks. BERT is a family of masked-language models. The first part will involve using pre-trained weights loaded into the BERT model and then performing sentence classification on the \texttt{sst} dataset and \texttt{cfimdb} dataset. Next, we will fine-tune the BERT model to perform well on multiple sentence-level tasks. Our goal is to have a BERT model that is successful in achieving the baselines described below on the individual tasks.
+
+\subsection{Task} 
+% Prompt
+% This could be the same task as addressed by your chosen paper, but it doesn't have to be. Describe the task clearly (i.e. give an example of an input and an output, if applicable) -- though if you already did this in the paper summary, there's no need to repeat. 
+
+Our model will work on three different tasks: sentiment analysis, paraphrase detection, and semantic textual similarity (STS). In sentiment analysis, the goal is to evaluate the sentiment of a phrase on a scale from 0 to 4. In paraphrase detection, you have two sentences and you want to evaluate whether the second sentence is a paraphrase of the first sentence, the output is a simple yes/no (binary classification). Finally, in STS, the goal is to measure the degree of semantic evaluation between two sentences on a scale from 0 to 5.
+
+\subsection{Data}
+% Prompt
+% Specify the dataset(s) you will use (including its size), and describe any preprocessing you plan to do. If you plan to collect your own data, describe how you will do that and how long you expect it to take.
+We will be using two datasets: Stanford Sentiment Treebank (SST) dataset and the CFIMDB dataset. The SST dataset contains 11,855 single sentences which were extracted from movie reviews. The dataset contains 215,514 unique phrases with a label representing values from 0 to 4. The CFIMDB dataset contains 2,434 movie reviews with a binary label for each review. We have the following splits for each dataset:
+
+\begin{center}
+\begin{tabular}{ |c|c|c|c|c| } 
+ \hline
+ \textbf{split} & \textbf{SST} & \textbf{CFIMDB} & \textbf{Quora} & \textbf{SemEval STS} \\
+ \hline
+ train & 8,544 & 1,701 & 141,506 & 6,041 \\
+ \hline
+ dev & 1,101 & 245 & 20,215 & 864 \\
+ \hline
+ test & 2,210 & 488 & 40,431 & 1,726\\  
+ \hline
+\end{tabular}
+\end{center}
+% \begin{multicols}{4}
+% \begin{itemize}
+%     \item[] \textbf{SST dataset}
+%     \item \texttt{train} (8,544 examples)
+%     \item \texttt{dev} (1,101 examples)
+%     \item \texttt{test} (2,210 examples)
+%     \item[] \textbf{CFIMDB dataset}
+%     \item \texttt{train} (1,701 examples)
+%     \item \texttt{dev} (245 examples)
+%     \item \texttt{test} (488 examples)
+%     \item[] \textbf{Quora Dataset}
+%     \item \texttt{train} (141,506 examples)
+%     \item \texttt{dev}  (20,215 examples)
+%     \item \texttt{test} (40,431 examples)
+%     \item[] \textbf{SemEval STS}
+%     \item \texttt{train} (6,041 examples)
+%     \item \texttt{dev} (864 examples)
+%     \item \texttt{test} (1,726 examples)
+% \end{itemize}
+% \end{multicols}
+
+\subsection{Methods}
+% prompt
+% Describe the models and/or techniques you plan to use.
+% If it's already described in the paper summary, no need to repeat.
+% If you plan to explore a variant to a published method, focus on describing how your method will be different.
+% Make it clear which parts you plan to implement yourself, and which parts you will download from elsewhere. 
+% If there is any part of your planned method that is original, make it clear.
+
+We will use a \texttt{WordPiece} tokenizer to convert input sentences into tokens which then get mapped to ids. Then, for each token we will have an embedding layer. Each embedding layer has a dimensionality of 768. We will then implement a multi-head self attention layer which takes a query and set of key-value pairs producing an output. Finally, we will then implement a transformer layer. Additionally, we will also be implementing the \texttt{step()} function of the Adam Optimizer. This completes the implementation of the BERT model. We will then evaluate the model on the three tasks and our hope is to achieve the baseline accuracy.
+
+Next, our goal is to build upon the model to further improve its performance by integrating the extensions from the papers discussed earlier. We plan to have additional pretraining by integrating ideas such as \textit{fine-tuning BERT for text classification} and \textit{cosine-similarity fine-tuning}.
+
+\subsection{Baselines}
+% Prompt
+% Describe what methods you will use as baselines. Make it clear if these will be implemented by you, downloaded from elsewhere, or if you will just compare with previously published scores.
+The following are task specific baselines which would be used to compare with our BERT base model implementation as well as with the fine-tuned improvements. We plan to use the BERT base model as the baseline for each of the three tasks.\cite{bert} For finetuning, we use the CSE: Contrastive Learning performance metrics for each task using the BERT base model \cite{simcse}. 
+
+\paragraph{Sentiment Analysis}
+The given SST and CFIMDB dataset has baselines given the the default project description. We plan to compare our baseline BERT sentiment classification accuracy with the following baselines.
+
+\begin{table}[htbp]
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        Dataset & Pretrained & FineTuned \\ \hline
+         SST    &   0.39  & 0.515 \\   
+         CFIMDB &   0.78  & 0.966 \\ 
+         \hline 
+    \end{tabular}
+    \caption{Accuracy score on the Development Set  for Sentiment Classification}
+    \label{baseline_SA}
+\end{table}
+\vspace{-2em}
+
+\paragraph{Semantic Textual Similarity}
+The SemEval dataset includes 5 levels of similarity between two sentences. Hence we will use the default metric which is the Pearson score to compare our model performance on the leader-board and the given SemEval dataset. We plan to compare out model performance on the STS Benchmark dataset as well.
+
+\paragraph{Paraphrase Detection}
+We use the accuracy for the model to measure the performance on the Quora Dataset. Since it's a binary classification task, we compare the accuracy of our implementation with the baseline BERT model published scores.
+
+\subsection{Evaluation}
+% Prompt
+% Specify at least one well-defined, numerical, automatic evaluation metric you will use for quantitative evaluation. 
+% What existing scores will you be comparing against for this metric? For example, if you're reimplementing or extending a method, state what score(s) the original method achieved; if you're applying an existing method to a new task, mention the state-of-the-art performance on the new task, and say something about how you expect your method to perform compared to other approaches.
+% If you have any particular ideas about the qualitative evaluation you will do, you can describe that too.
+
+We plan to evaluate our  BERT implementation for sentiment classification, semantic textual similarity and paraphrase identification. For each task we have the baselines of the existing methods as well as for the fine-tuned methods. For all the tasks, accuracy score will be used as the evaluation metric. We plan to compute other metrics such as F1-score, ROC-AUC score, inference latency as well as memory usage to understand the overall performance of the model. 
+
+\begin{itemize}
+    \item For sentiment classification we plan to use the default accuracy metric to compare our model performance with the given baselines. Ideally, we will plan to use mean accuracy over the classes, F1-score and ROC-AUC scores. For sentiment classification on the binary movie review dataset, we use accuracy as well.
+
+    \item For Semantic Textual similarity we use the Pearson score as the default metric along with accuracy score and cosine similarity between two sentences. 
+
+    \item For Paraphrase detection we use accuracy as the default metric since it is a binary classification problem. 
+
+\end{itemize}
+
+\newpage
+\bibliographystyle{unsrt}
+\bibliography{references}
+
+\end{document}
