@@ -5,4 +5,4 @@ CS224N: Natural Language Processing With Deep Learning Default Project
     </iframe>
 </object>
 
-
+<img src="documents/poster/poster.jpg" alt="Sample Image">
